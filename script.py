@@ -131,7 +131,7 @@ def main():
         if x == 0:
             timestamp = timestamp
         else:
-            timestamp = liked_posts["liked_timestamp"]
+            timestamp = liked_posts[-1]["liked_timestamp"]
 
         # get the posts
         liked_posts = get_likes_list(client, timestamp, limit=LIMIT)
