@@ -23,53 +23,56 @@ from configs import (
 
 def get_timestamp_from_file(file_name):
     """Read the saved timestamp from file
-     Parameters
-        ----------
-        file_name : str
-            Name of the file
-        
-        Returns
-        -------
-        int
-            Last saved timestamp on file or 0 if no data on file
+    Parameters
+       ----------
+       file_name : str
+           Name of the file
+
+       Returns
+       -------
+       int
+           Last saved timestamp on file or 0 if no data on file
     """
     timestamp = 0
-    with open(file_name, "r") as timestamp_file:
-        timestamp_string = timestamp_file.read().strip()
-        if timestamp_file:
-            if timestamp_string.isdigit():
+    try:
+        with open(file_name, "r") as timestamp_file:
+            timestamp_string = timestamp_file.read().strip()
+            if timestamp_string:
+                try:
+                    timestamp = int(timestamp_string)
+                except ValueError:
+                    logging.error(
+                        "Timestamp format not valid. Timestamp should be in UNIX timestamp format."
+                    )
+                    logging.info(
+                        "For more about UNIX timestamp, please check - https://en.wikipedia.org/wiki/Unix_time"
+                    )
+
+                    sys.exit(1)
+
                 if len(timestamp_string) > 10:
                     logging.info("Are you from heaven? Is Tumblr still around?")
                     input("Press Enter to continue or CTRL + C to get back to earth.")
 
-                timestamp = int(timestamp_string)
-
-            else:
-                # timestamp not valid, contains non-numeric characters
-                logging.error(
-                    "Timestamp format not valid. Timestamp should be in UNIX timestamp format."
-                )
-                logging.info(
-                    "For more about UNIX timestamp, please check - https://en.wikipedia.org/wiki/Unix_time"
-                )
-
-                sys.exit(1)
+    except FileNotFoundError:
+        logging.error("Timestamp file not found! Existing..")
+        sys.exit(1)
 
     return timestamp
 
 
 def write_timestamp_to_file(file_name, timestamp):
     """Save last timestamp to file
-     Parameters
-        ----------
-        file_name : str
-            Name of the file
-        timestamp: int
-            Timestamp to save
-        
-        Returns
-        -------
-        None
+    Parameters
+       ----------
+       file_name : str
+           Name of the file
+       timestamp: int
+           Timestamp to save
+
+       Returns
+       -------
+       None
     """
     with open(file_name, "w") as timestamp_file:
         timestamp_file.write(str(timestamp))
@@ -77,20 +80,20 @@ def write_timestamp_to_file(file_name, timestamp):
 
 def get_likes_list(client, timestamp, limit=50):
     """Get data of 50 likes that were liked after the timstamp from Tumblr API
-     Parameters
-        ----------
-        client : TumblrRestClient object
-            Handles the connection with Tumblr API
-        timestamp : int
-            Data will be fetched of posts that were liked after this timestamp
-        limit : int, optional
-            Number (maximum) of posts that to be fetched in a batch. 
-        
-        Returns
-        -------
-        dict
-            A dict containing the liked posts data.
-            Or emtpy in case of errors with connection.
+    Parameters
+       ----------
+       client : TumblrRestClient object
+           Handles the connection with Tumblr API
+       timestamp : int
+           Data will be fetched of posts that were liked after this timestamp
+       limit : int, optional
+           Number (maximum) of posts that to be fetched in a batch.
+
+       Returns
+       -------
+       dict
+           A dict containing the liked posts data.
+           Or emtpy in case of errors with connection.
     """
 
     if limit > 50:
@@ -122,8 +125,6 @@ def main():
         CONSUMER_KEY, CONSUMER_SECRET, OAUTH_TOKEN, OAUTH_SECRET
     )
 
-    # print(client.info())
-
     # This is flood bot
     # Tries to post upto 250 posts if available
 
@@ -135,12 +136,13 @@ def main():
 
         # get the posts
         liked_posts = get_likes_list(client, timestamp, limit=LIMIT)
-        # print(liked_posts)
 
         if liked_posts:
             for index, post in enumerate(liked_posts):
                 last_post = client.reblog(
-                    BLOG_NAME, id=post["id"], reblog_key=post["reblog_key"],
+                    BLOG_NAME,
+                    id=post["id"],
+                    reblog_key=post["reblog_key"],
                 )
                 logging.info(
                     f"{x*50 + index} - {post['blog_name']}: {post['post_url']} -- {post['liked_timestamp']}"
@@ -152,13 +154,6 @@ def main():
                     logging.error(cant_post)
 
             timestamp = liked_posts[-1]["liked_timestamp"]
-            # print("Any liked posts?")
-            # # loop over the data and do your thing
-            # for index, post in enumerate(liked_posts):
-            #     print(f"{x*50 + index} - {post['blog_name']}: {post['post_url']}")
-            #     client.reblog(
-            #         BLOG_NAME, id=post["id"], reblog_key=post["reblog_key"],
-            #     )
         else:
             logging.warning("No new liked posts")
             break
@@ -170,4 +165,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
