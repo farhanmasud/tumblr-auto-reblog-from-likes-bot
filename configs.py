@@ -12,6 +12,6 @@ LIMIT = 50
 TIMESTAMP_FILE = "last_timestamp.txt"
 
 try:
-    from local_settings import *
+    from .local_settings import *
 except ImportError:
     pass
